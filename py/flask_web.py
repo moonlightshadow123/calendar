@@ -4,15 +4,106 @@ import orm, json
 
 app = Flask(__name__, static_url_path='', static_folder="../web")   
 
-def processTags(tagsdata):
-    tagids = []
-    new_tags = []
-    for tag in tagsdata:
-        if "id" in tag:
-            tagids.append(tag['id'])
-        else:
-            new_tags.append(tag['value'])
-    return tagids, new_tags
+@app.route('/getTags')
+def getTags():
+    #tagid = request.args.get("tagid", type=int)
+    res = None
+    try:
+        res = orm.getTags()
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":res, "msg":"Successfully get tags!"})
+
+@app.route('/getEventsByTags',methods=["POST"])
+def getEventsByTags():
+    tagsdata = request.get_json()
+    print(tagsdata)
+    try:
+        res = orm.getEventsByTags(tagsdata)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":res, "msg":"Successfully get tags!"})
+
+@app.route("/deleteEvent")
+def deleteEvent():
+    eventId = request.args.get("id")
+    res = None;
+    try:
+        res = orm.deleteEvent(eventId)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":res, "msg":"Successfully get tags!"})
+
+@app.route('/updateEvent', methods=["POST"])
+def updateEvent():
+    data = request.get_json()
+    print(data)
+    eventId = data["id"]
+    tags = data["tags"]
+    if eventId == "" or eventId == "0":
+        try:
+            del data["id"]
+            event = orm.createEvent(data)
+            data["id"] = event.id
+            eventId = event.id
+        except Exception as e:
+            getTraceLog(e)
+            return jsonify({"res":None, "msg":"Server Get Tags Error!"})    
+    else:
+        try:
+            orm.updateEvent(eventId, data)
+        except Exception as e:
+            getTraceLog(e)
+            return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    if tags != "":
+        tags = json.loads(tags)
+        tagids = [tag["id"] for tag in tags]
+        try:
+            orm.updateETs(eventId, tagids)
+        except Exception as e:
+            getTraceLog(e)
+            return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":data, "msg":"Successfully get tags!"})
+
+
+@app.route("/newTag")
+def newTag():
+    tagname = request.args.get("tagname")
+    res = None;
+    try:
+        newtag = orm.createTag(tagname)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":{"id":newtag.id, "name":newtag.name}, "msg":"Successfully get tags!"})
+
+@app.route("/deleteTag")
+def deleteTag():
+    tagid = request.args.get("tagid", type=int)
+    res = None;
+    try:
+        res = orm.deleteTag(tagid)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":res, "msg":"Successfully get tags!"})
+
+@app.route("/updateTag")
+def updateTag():
+    tagid = request.args.get("tagid", type=int)
+    name = request.args.get("name")
+    res = None;
+    try:
+        res = orm.updateTag(tagid, name)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Get Tags Error!"})
+    return jsonify({"res":res, "msg":"Successfully get tags!"})
+
+############
 
 @app.route('/updateJson', methods=["POST"])
 def updateJson():
@@ -58,7 +149,7 @@ def updateJson():
             return jsonify(res)
     res = {"res": True, "msg":"Successfully updated Entry id: {}!".format(entryid)}
     return jsonify(res)
-
+'''
 @app.route('/deleteEntry')
 def deleteEntry():
     entryid = request.args.get("id", type=int)
@@ -72,23 +163,13 @@ def deleteEntry():
 @app.route('/getTags')
 def getTags():
     #tagid = request.args.get("tagid", type=int)
-    res = None;
+    res = None
     try:
         res = orm.getTags()
     except Exception as e:
         getTraceLog(e)
         return jsonify({"res":None, "msg":"Server Get Tags Error!"})
     return jsonify({"res":res, "msg":"Successfully get tags!"})
-
-@app.route('/deleteTag')
-def deleteTag():
-    tagid = request.args.get("tagid", type=int)
-    try:
-        orm.deleteTag(tagid)
-    except Exception as e:
-        getTraceLog(e)
-        return jsonify({"res":False, "msg":"Delete Tag Error!"})
-    return jsonify({"res":True, "msg":"Successfully deleted tag: {}!".format(tagid)})
 
 @app.route("/query", methods=["POST"])
 def query():
@@ -102,7 +183,7 @@ def query():
         getTraceLog(e)
         return jsonify({"res": False, "msg": "Query Content and Tag Error!"})
     return jsonify({"res":querylist, "msg":"Successfully Query Entries!"});
-
+'''
 if __name__ == '__main__':
     app.debug = True
-    app.run(host='0.0.0.0', port=9200)
+    app.run(host='0.0.0.0', port=9300)

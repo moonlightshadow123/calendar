@@ -45,12 +45,14 @@
     min-width: 400px;
     box-shadow: 0 2px 8px -2px black;
     border-radius: 10px;
+    position: relative;
 }
 
 .header{
-    display: grid;
-    grid-template-columns:auto 30px;
-    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    font-weight: 700;
+    padding: 5px;
 }
 
 .footer{
@@ -65,6 +67,10 @@
     font-size: 28px;
     font-weight: bold;
     text-align: center;
+    top:10px;
+    right:20px;
+    position:absolute;
+    display: block;
 }
 .close:hover,
 .close:focus {

@@ -4,6 +4,9 @@ var $eventForm = $("#eventForm");
 var $recur = $("#recur");
 var $recurContent = $("#recurContent");
 var $tagsInput = $("#tagsInput");
+var $deleteEventDiv = $("#deleteEventDiv");
+var $deleteEventBtn = $("#deleteEventBtn");
+var $eventId = $("#eventId");
 
 
 var calendar;
@@ -19,7 +22,7 @@ function onClick(info){
     console.log(eventObject);
     getTags();
     eventToForm(event, $eventForm);
-    openModal($editModal);
+    openModal($editModal, "Edit Event with id "+event.id.toString());
 }
 
 $recur.change(function(){
@@ -46,13 +49,15 @@ function clearForm(){
     $eventForm.find('input[type="checkbox"]').prop("checked", false);
     tagify.removeAllTags();
     $recurContent.css("display", "none");
+    $deleteEventDiv.css("display", "none");
 }
 
 function eventToForm(event, $form){
     clearForm();
+    $deleteEventDiv.css("display", "block");
     // Id
     if(event.id != null)
-        $form.find("#eventId").attr("value", event.id)
+        $eventId.attr("value", event.id)
     textToInput(event["title"], $form.find('input[name="title"]'));
     textToInput(event.extendedProps["desc"], $form.find('input[name="desc"]'));
     textToInput(event.extendedProps["location"], $form.find('input[name="location"]'));
@@ -78,6 +83,9 @@ function eventToForm(event, $form){
     duraToTInput(rdata["startTime"], $form.find('input[name="startTime"]'));
     duraToTInput(rdata["endTime"], $form.find('input[name="endTime"]'));
     dowToForm(rdata["daysOfWeek"], $form);
+    //var $text = $("<span>Event ID: "+event.id+"</span>")
+    //var $delete = $('<span class="delete" data-id="'+event.id+'"><i class="far fa-trash"></i></span>')
+    //$editModal.find(".header").html("").append($text);//.append($delete);
 
 }
 
@@ -216,7 +224,7 @@ function getFormData($form){
 
 $confirmBtn.click(function(){
     data = getFormData($eventForm);
-    postData('/updateEvent', data, function(data){});
+    postData('/updateEvent', data, function(data){refreshAll();});
 });
 
 /////////////////////////////// Tagify
@@ -382,24 +390,37 @@ function mouseLeave(info){
 
 // Events
 
-function deleteEvent(){
+$deleteEventBtn.click(function(){
+    var id = $eventId.val();
+    dialogPop("Are you sure to delete event with id '" + id.toString() + "'?" , ()=>{
+        getData("/deleteEvent?id=" + id, ()=>{refreshAll();});
+    });
 
-}
+});
 
 function eventDrop(info){
-    alert(info.event.title + " was dropped on " + info.event.start.toISOString());
+    $tooltip.fadeOut();
+    //alert(info.event.title + " was dropped on " + info.event.start.toISOString());
     if(info.event._def.recurringDef != null){
-        info.revert();
+        dialogPop("Recurring events can't be dropped!", ()=>{
+           info.revert();
+        });
         return;
     }
-    if (!confirm("Are you sure about this change?")) {
+    dialogPop("Are you sure to dop the event at " + info.event.start.toLocaleDateString() + "?", ()=>{
+        eventToForm(info.event, $eventForm);
+        data = getFormData($eventForm);
+        postData('/updateEvent', data, function(data){;refreshAll();});
+    }, ()=>{
+        info.revert();
+    });
+    /*if (!confirm("Are you sure about this change?")) {
       info.revert();
     }else{
         eventToForm(info.event, $eventForm);
         data = getFormData($eventForm);
         postData('/updateEvent', data, function(data){});
-    }
-
+    }*/
 }
 
 function removeEvents(){
@@ -410,7 +431,8 @@ function displayEvents(events){
     console.log(events);
     events.forEach(function(event){
         event["color"] = getColor(JSON.stringify(event["tags"]));
-        var eventobj = calendar.addEvent(event);
+        if(calendar.getEventById(event.id) == null)
+            var eventobj = calendar.addEvent(event);
         /*eventobj.setExtendedProp("tags", event["tags"]);
         eventobj.setExtendedProp("dbid", event["id"]);
         eventobj.setProp("color", getColor(JSON.stringify(event["tags"])));*/

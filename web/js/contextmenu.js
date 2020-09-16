@@ -23,7 +23,7 @@ function itemCBK(key, opt, e){
     });
 }
 
-var menu;
+var menuData;
 
 function buildItems(tags){
     var items = {
@@ -123,7 +123,8 @@ $(function(){
             },
             hide: function(opt) {
                 var $this = this;
-                $.contextMenu.getInputValues(opt, $this.data());
+                //$.contextMenu.getInputValues(opt, $this.data());
+                getMenuData(this,opt)
             }
         }
     });
@@ -131,13 +132,12 @@ $(function(){
 
 function getMenuData($this, opt){
     $.contextMenu.getInputValues(opt, $this.data());
-    var menuData = $this.data();
+    menuData = $this.data();
     console.log(menuData);
     return menuData;
 }
 
-function dis_conf(key, opt, e){
-    var menuData = getMenuData(this, opt);
+function refreshAll(){
     var res = [];
     console.log(tags);
     if(menuData.hasOwnProperty(0)&&menuData[0])
@@ -154,19 +154,45 @@ function dis_conf(key, opt, e){
     });
 }
 
+function dis_conf(key, opt, e){
+    menuData = getMenuData(this, opt);
+    refreshAll();
+    /*var res = [];
+    console.log(tags);
+    if(menuData.hasOwnProperty(0)&&menuData[0])
+        res.push(0);
+    tags.forEach(function(tag){
+        var tagid = tag["id"];
+        if(menuData.hasOwnProperty(tagid)&&menuData[tagid])
+            res.push(tagid);
+    });
+    console.log(res);
+    postData(getEventsByTagsUrl, res, (data)=>{
+        removeEvents();
+        displayEvents(data);
+    });*/
+}
+
 function cha_conf(key, opt, e){
-    var menuData = getMenuData(this, opt);
+    menuData = getMenuData(this, opt);
     var change_tag = menuData.change_tag;
     var change_name = menuData.change_name;
+    var item = opt.items["display"]["items"][change_tag];
     var url = updateTagUrl+"?tagid=" + change_tag + "&name=" + change_name;
-    getData(url, (data)=>{console.log(data)} );
+    dialogPop("Are you sure to change the tag '" +item.name+ "' to '" +change_name +"'?", ()=>{
+        getData(url, (data)=>{console.log(data);refreshAll();} );
+    });
+    
 }
 
 function new_conf(key, opt, e){
-    var menuData = getMenuData(this, opt);
+    menuData = getMenuData(this, opt);
     var new_tag = menuData.new_tag;
     var url = newTagUrl + "?tagname=" + new_tag;
-    getData(url, (data)=>{console.log(data)} );
+    //getData(url, (data)=>{console.log(data)} );
+    dialogPop("Are you sure to create a new tag '" +new_tag+ "'?", ()=>{
+        getData(url, (data)=>{console.log(data);refreshAll();} );
+    });
 }
 
 function deleteTagCBK(key, opt, e){
@@ -174,11 +200,14 @@ function deleteTagCBK(key, opt, e){
     console.log(item);
     var tagid = item.id;
     var url = deleteTagUrl + "?tagid=" + tagid;
-    getData(url, (data)=>{console.log(data)});   
+    //getData(url, (data)=>{console.log(data)});
+    dialogPop("Are you sure to delete tag '" + key +"'?", ()=>{
+        getData(url, (data)=>{console.log(data);refreshAll();} );
+    });   
 }
 
 function addEventCBK(key, opt, e){
     console.log(key);
     clearForm();
-    openModal($editModal);
+    openModal($editModal, "Edit New Event");
 }

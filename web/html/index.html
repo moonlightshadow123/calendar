@@ -15,18 +15,50 @@
 
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu&display=swap" rel="stylesheet">
+
   <style type="text/css">
     .tooltip_row{
       margin: 5px;
+    }
+    body{
+      font-family: 'Ubuntu', sans-serif;
+      font-size: 120%;
+    }
+    .button{
+      border: 1px solid gray;
+      border-radius: 10px;
+      padding: 5px;
+    }
+    .button:hover{
+      background-color: #ff6666;
+      box-shadow: 0 2px 8px -2px gray;
+      color: #ffffff;
     }
   </style>
   </head>
   <body style="background-color: #f6f6f6">
 
+<div id="dialogModal" class="modal">
+  <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close closeModal dialogCancel" style="">&times;</span>
+        <div class="header" style="text-align: center;"><span style="">Dialog</span> </div>
+        <div class="msg" style="font-weight: 700;text-align: center;padding: 20px;"></div>
+        <div class="footer">
+         <button class="closeModal" id="dialogConfirm">Confirm</button>
+         <button class="closeModal dialogCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
   <div id="editModal" class="modal">
   <!-- Modal content -->
-  <div class="modal-content">
-    <div class="header" style="text-align: center;"><span style="font-weight: 700">Edit Content.</span> <span  class="closeModal close">&times;</span> </div>
+  <div class="modal-content" >
+    <span class="close closeModal" style="">
+      &times;
+    </span>
+    <div class="header" style="font-weight: 700">New Item</div>
     <form id="eventForm">
       <input type="hidden" name="id" id="eventId" value="0">
       <div class="form_grid">
@@ -86,6 +118,9 @@
         </select>
       </div>
       <!--<div class="form_grid"><span>Group Id:</span> <input type="text" name="groupId"></div>-->
+      </div>
+      <div id="deleteEventDiv" style="margin-bottom: 10px;text-align: center;padding: 10px;">
+         <span class="button closeModal" id="deleteEventBtn"><i class="far fa-trash-alt"></i>&nbsp;Delete</span>
       </div>
     </form>
     <div class="footer">

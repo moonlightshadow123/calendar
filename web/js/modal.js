@@ -4,6 +4,9 @@ var $editModal = $("#editModal");
 var $editForm = $("#editForm");
 var $confirmBtn = $("#confirmBtn");
 var $cancelBtn = $("#cancelBtn");
+var $dialogModal = $("#dialogModal");
+var $dialogConfirm = $("#dialogConfirm"); 
+var $dialogCancel = $(".dialogCancel");
 
 
 var $msg_temp = $(".msgbox").clone();
@@ -14,8 +17,10 @@ $(".closeModal").click(function(){
 	$(this).closest(".modal").fadeOut();
 });
 
-function openModal($modal){
+function openModal($modal, header=""){
 	$modal.css("display", "flex").hide().fadeIn();
+	if(header != "")
+		$modal.find(".header").html(header);
 }
 
 $("body").on("click", ".closeMsg", function(){
@@ -47,4 +52,36 @@ $confirmBtn.click(function(){
 $cancelBtn.click(function(){
 	alertmsg("Canceled!");
 });
+
+//// dialog
+
+var confirmCBK;
+var cancelCBK;
+
+/*$dialogConfirm.click(function(event){
+	return true;
+});
+*/
+$dialogConfirm.click(function(event){
+	if(confirmCBK!=null)
+		confirmCBK();
+	/*if(event.result == true){
+		//alert("Confirmed Calling Callback!")
+		confirmCBK();
+	}else if(cancelCBK != null){
+		cancelCBK();
+	}*/
+});
+
+$dialogCancel.click(function(event){
+	if(cancelCBK!=null)
+		cancelCBK();
+});
+
+function dialogPop(msg, callback, callback2=null){
+	$dialogModal.find(".msg").html(msg);
+	openModal($dialogModal);
+	confirmCBK = callback;
+	cancelCBK = callback2;
+}
 
