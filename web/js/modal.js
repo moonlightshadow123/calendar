@@ -12,7 +12,7 @@ var $dialogCancel = $(".dialogCancel");
 var $msg_temp = $(".msgbox").clone();
 $(".msgbox").remove();
 
-// Msg and Modal
+//Modal
 $(".closeModal").click(function(){
 	$(this).closest(".modal").fadeOut();
 });
@@ -22,6 +22,16 @@ function openModal($modal, header=""){
 	if(header != "")
 		$modal.find(".header").html(header);
 }
+
+$confirmBtn.click(function(){
+	infomsg("Confirmed!");
+});
+
+$cancelBtn.click(function(){
+	alertmsg("Canceled!");
+});
+
+// Msg
 
 $("body").on("click", ".closeMsg", function(){
 	$(this).closest(".msgbox").slideUp();
@@ -39,38 +49,16 @@ function openmsg(msg, classname){
 	$ele = $msg_temp.clone();
 	$msgContainer.prepend($ele);
 	$ele.addClass(classname).find(".msg").html(msg);
-	//console.log($ele.width());
 	$ele.slideDown();
-	//if(nav_on)
-	//	$ele.css("width", $ele.width()-nav_width);
 }
-
-$confirmBtn.click(function(){
-	infomsg("Confirmed!");
-});
-
-$cancelBtn.click(function(){
-	alertmsg("Canceled!");
-});
-
 //// dialog
 
 var confirmCBK;
 var cancelCBK;
 
-/*$dialogConfirm.click(function(event){
-	return true;
-});
-*/
 $dialogConfirm.click(function(event){
 	if(confirmCBK!=null)
 		confirmCBK();
-	/*if(event.result == true){
-		//alert("Confirmed Calling Callback!")
-		confirmCBK();
-	}else if(cancelCBK != null){
-		cancelCBK();
-	}*/
 });
 
 $dialogCancel.click(function(event){

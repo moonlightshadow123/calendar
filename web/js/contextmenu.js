@@ -75,13 +75,6 @@ function buildItems(tags){
 var conmenuData;
 
 $(function(){
-    /*
-    $.contextMenu({
-        selector:".fc-event-title",
-        items:{
-            delete:{name:"Delete Event", icon:"delete", callback:null}
-        }
-    });*/
 
     $.contextMenu({
         selector: "body",//'.fc-toolbar-chunk', 
@@ -91,11 +84,6 @@ $(function(){
             {
                 // get options from $trigger
                 var options = conmenuData;//$trigger.data("contextMenuItems");
-
-                // clear $trigger.data("contextMenuItems"),
-                // so that menuitems are gotten next time user does a rightclick 
-                // from the server again.
-                //$trigger.data("contextMenuItems", null);
                 conmenuData = null;
                 return options;
             }
@@ -157,20 +145,6 @@ function refreshAll(){
 function dis_conf(key, opt, e){
     menuData = getMenuData(this, opt);
     refreshAll();
-    /*var res = [];
-    console.log(tags);
-    if(menuData.hasOwnProperty(0)&&menuData[0])
-        res.push(0);
-    tags.forEach(function(tag){
-        var tagid = tag["id"];
-        if(menuData.hasOwnProperty(tagid)&&menuData[tagid])
-            res.push(tagid);
-    });
-    console.log(res);
-    postData(getEventsByTagsUrl, res, (data)=>{
-        removeEvents();
-        displayEvents(data);
-    });*/
 }
 
 function cha_conf(key, opt, e){
