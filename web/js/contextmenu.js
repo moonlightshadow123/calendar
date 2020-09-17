@@ -3,14 +3,15 @@ var getTagsUrl = "/getTags";
 var getEventsByTagsUrl = "/getEventsByTags";
 var updateTagUrl = "/updateTag";
 var newTagUrl = "/newTag";
+var addEventClassUrl = "/addClass";
+var rmEventClassUrl = "/rmClass";
+var classEventInfo = {};
 var tags;  
 
 function onGetTags(tags){
-    new_tags = tags.map((item)=>{return {"id":item["id"], "value":item["name"]}});
-    //updateWList(aca.tags);
+    var new_tags = tags.map((item)=>{return {"id":item["id"], "value":item["name"]}});
     tags = new_tags;
     return new_tags;
-    //updateConMenu(aca.tags);
 }
 
 function itemCBK(key, opt, e){
@@ -56,9 +57,10 @@ function buildItems(tags){
                     "tag1":{"name": "tag2", icon:"delete"},*/
                 },
             },
-            sep: "----------",
+            sep1: "----------",
             addEvent:{name:"Add Event", icon:"fa-plus", callback:addEventCBK},
-
+            sep2: "----------",
+            quite: {name:"Quit", icon:"quit",callback:()=>{}},
         };
     tags.forEach (function (tag){
         var tagname = tag["value"];
@@ -71,11 +73,6 @@ function buildItems(tags){
     });
     return items;
 }
-
-var conmenuData;
-var addEventClassUrl = "/addClass";
-var rmEventClassUrl = "/rmClass";
-var classEventInfo = {};
 
 function buildECUrl(url){
     return url + "?id=" + classEventInfo.id + "&start=" + classEventInfo.start;
@@ -108,11 +105,20 @@ $(function(){
             classEventInfo["id"] = $trigger.attr("data-id");
             classEventInfo["start"] = $trigger.attr("data-start");
             var options = {items:{}};
-            options.items["done"] = {name:"Done", callback:doneCBK};
+            /*options.items["done"] = {name:"Done", callback:doneCBK};
             options.items["undone"] = {name:"Un-Done", callback:undoneCBK};
             options.items["sep"] = "----------";
             options.items["urgent"] = {name:"Urgent", callback:urgentCBK};
-            options.items["un-urgent"] = {name:"Un-Urgent", callback:unurgentCBK}; 
+            options.items["un-urgent"] = {name:"Un-Urgent", callback:unurgentCBK};*/ 
+            options.items= {
+                done: {name:"Done", callback:doneCBK, icon:"fa-check-square"},
+                undone: {name:"Un-Done", callback:undoneCBK, icon:"fa-square"},
+                sep1: "------------",
+                urgent: {name:"Urgent", callback:urgentCBK, icon:"fas fa-star"},
+                unurgent: {name:"Un-Urgent", callback:unurgentCBK, icon:"far fa-star"},
+                sep2: "-----------",
+                quit: {name:"Quit", icon:"quit",callback:()=>{}}
+            };
             return options;
         }
     });
@@ -138,9 +144,6 @@ $(function(){
                 getData(getTagsUrl, (data)=>{
                     tags = onGetTags(data["results"]);
                     options.items = buildItems(tags);
-                    // save the options on the table-row;
-                    //$trigger.data("contextMenuItems", options);
-                    // open the context-menu (reopen)
                     conmenuData = options;
                     $trigger.contextMenu(position);
                 }, dismsg=false);           
@@ -222,7 +225,7 @@ function deleteTagCBK(key, opt, e){
 }
 
 function addEventCBK(key, opt, e){
-    clearForm();
     getTags();
+    clearForm();
     openModal($editModal, "Edit New Event");
 }

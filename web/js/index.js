@@ -92,23 +92,27 @@ $(function(){
 });
 
 function renderEvent(arg){
-    argData = arg;
     var event = arg.event;
     var view = arg.view;
     var $div = $('<div class="eventDiv">');
     var $pre_span = $('<span class="eventPre">');//.html("~Flag~");
     var $head_span = $('<span class="eventHead">');
     var $title_span = $('<span class="eventTitle" data-id="'+event.id+'" data-start="'+dateToText(event.start)+'">').html(event.title);
+    $div.append($pre_span, $head_span, $title_span);
+    detectRenderClass(event, $div);
     if(view.type == "dayGridMonth"){
         if(!event.allDay){
             var color = getColor(JSON.stringify(event.extendedProps.tags));
             $head_span.append($('<span class="dot" style="color:'+color+'">').html("&#9679;&nbsp;"));//.html("&#8226;"));
             $head_span.append($('<span>').html(event.start.getHours()+":"+event.start.getMinutes() + "&nbsp;"));
+        }else{
+            $pre_span.find("span").css("color","white");
         }
-        $title_span.addClass("cut-text");    
+        $title_span.addClass("cut-text");   
     }
-    $div.append($pre_span, $head_span, $title_span);
-    detectRenderClass(event, $div);
+    if(view.type == "timeGridWeek" || view.type == "timeGridDay"){
+        $pre_span.find("span").css("color","white");
+    }
     //return {domNodes:[$head_span[0], $foot_span[0], $title_span[0]]};
     return {domNodes:[$div[0]]};
 }
@@ -134,21 +138,18 @@ function detectRenderClass(event, $div){
 }
 
 function addDone($div){
-    $div.find(".eventPre").append($("<span>").css("color", "green").html("&#10004;&nbsp;"));
+    $div.find(".eventPre").append($("<span>").css("color", "green").html('<i class="fas fa-check-circle"></i>&nbsp;'));
 }
 
 function addUrgent($div){
-    $div.find(".eventPre").append($("<span>").css("color", "red").html("&#9752;&nbsp;"));
+    $div.find(".eventPre").append($("<span>").css("color", "red").html('<i class="fas fa-star"></i>&nbsp;'));
 }
 
-var argData;
 function eventDrop(info){
     $tooltip.fadeOut();
     //alert(info.event.title + " was dropped on " + info.event.start.toISOString());
     if(info.event._def.recurringDef != null){
-        dialogPop("Recurring events can't be dropped!", ()=>{
-           info.revert();
-        });
+        dialogPop("Recurring events can't be dropped!", ()=>{info.revert();}, ()=>{info.revert();});
         return;
     }
     dialogPop("Are you sure to dop the event at " + info.event.start.toLocaleDateString() + "?", ()=>{
@@ -186,7 +187,6 @@ $deleteEventBtn.click(function(){
 });
 
 function getColor(text) {
-    //console.log(text);
     var COLORS = [
         'LightCoral','blue', 'purple',
         'chocolate', 'tan','magenta', 'orange', 'salmon',
@@ -205,9 +205,7 @@ function getColor(text) {
 
 
 function onClick(info){
-    var eventObject = info.event;
-    event = eventObject;
-    console.log(eventObject);
+    var event = info.event;
     getTags();
     eventToForm(event, $eventForm);
     openModal($editModal, "Edit Event with id "+event.id.toString());
@@ -217,20 +215,19 @@ function getTags(){
     getData(getTagsUrl, (data)=>{
         var tags = onGetTags(data["results"]);
         updateWList(tags);
-        tagsToForm();
     }, dismsg=false);
 }
 
 //////////////////////////// Modal 
-var RData;
 
 function clearForm(){
     $eventForm.find("input").val("");
     $eventForm.find("select").val("");
     $eventForm.find('input[type="checkbox"]').prop("checked", false);
-    tagify.removeAllTags();
     $recurContent.css("display", "none");
     $deleteEventDiv.css("display", "none");
+    tagify.removeAllTags();
+    $eventForm.find(".select2").val([]).trigger("change");
     onCheckChange($recur);
 }
 
@@ -243,7 +240,8 @@ function eventToForm(event, $form){
     textToInput(event["title"], $form.find('input[name="title"]'));
     textToInput(event.extendedProps["desc"], $form.find('input[name="desc"]'));
     textToInput(event.extendedProps["location"], $form.find('input[name="location"]'));
-    cur_tags = event.extendedProps["tags"];
+    //cur_tags = event.extendedProps["tags"];
+    tagsToForm(event.extendedProps["tags"]);
 
     dateToDTInput(event["start"], $form.find('input[name="start"]'));
     dateToDTInput(event["end"], $form.find('input[name="end"]'));
@@ -252,14 +250,12 @@ function eventToForm(event, $form){
     if(event.allDay){
         $form.find("#allDay").prop("checked", true);
     }
-    if(!event.recur){
+    if(!event.extendedProps.recur){
         $recur.prop("checked", false); setTimeout(function(){onCheckChange($recur[0])}, 1000);
         return;
     }
     $recur.prop("checked", true); setTimeout(function(){onCheckChange($recur[0])}, 1000);
     var rdata = event._def.recurringDef.typeData;  
-    console.log(rdata);
-    RData = rdata;
     dateToDInput(rdata["startRecur"], $form.find('input[name="startRecur"]'));
     dateToDInput(rdata["endRecur"], $form.find('input[name="endRecur"]'));
     duraToTInput(rdata["startTime"], $form.find('input[name="startTime"]'));
@@ -290,11 +286,11 @@ function dowToForm(dow, $form){
     $form.find(".select2").val(dow).trigger("change");
 }
 
-function tagsToForm(){
-    if(cur_tags == null || cur_tags.length == 0)
+function tagsToForm(tags){
+    if(tags == null || tags.length == 0)
         return;
     var format_tags = [];
-    cur_tags.forEach(function(tag){
+    tags.forEach(function(tag){
         format_tags.push(tag["name"])
     });
     tagify.addTags(format_tags);
@@ -364,6 +360,13 @@ function duraToTInput(duration, $input){
 // serialize form 
 var data;
 
+function emptyKeys(json, keys){
+    keys.forEach(function(key){
+        if(json.hasOwnProperty(key))
+            json[key]="";
+    });
+}
+
 function getFormData($form){
     var unindexed_array = $form.serializeArray();
     var indexed_array = {"daysOfWeek":[], "allDay":false,"recur":false};
@@ -382,6 +385,10 @@ function getFormData($form){
     });
     if(indexed_array["daysOfWeek"] == [])
         delete indexed_array["daysOfWeek"];
+    if(indexed_array["recur"] == false){
+        emptyKeys(indexed_array, ["startRecur", "endRecur", "startTime", "endTime", "daysOfWeek"]);
+    }
+    console.log(indexed_array);
     return indexed_array;
 }
 
@@ -423,8 +430,6 @@ function updateWList(whitelist){
 }
 
 ///////////////////////////// Tooltip
-var theevent;
-var tooltip_dis = false;
 
 function mouseEnter(info){
     var event = info.event;
@@ -450,8 +455,6 @@ function fillTooltip(event, name, eleid){
         value = event[name];
     if(event.extendedProps[name] != null)
         value = event.extendedProps[name];
-    //console.log(value);
-    theevent = event;
     if(value!="")
         if(typeof(value)=="object")
             $tooltip.find("#"+eleid).find(".content").html(value.toLocaleString());

@@ -80,7 +80,7 @@ def dowTostr(obj):
 		if obj["daysOfWeek"] not in[[],"", None]: 
 			obj["daysOfWeek"] = json.dumps(obj["daysOfWeek"])
 		else:
-			del obj["daysOfWeek"]
+			obj["daysOfWeek"] = "[]";
 	return obj
 
 def dowToList(obj):
@@ -146,7 +146,7 @@ def addClass(id, classname, start):
 		if start not in ec["recur"]:
 			ec["recur"][start] = classname
 		else:
-			ec["recur"][start] = addClassText(ec["recur"][start, classname])
+			ec["recur"][start] = addClassText(ec["recur"][start], classname)
 	Event.update({Event.eventClass:ec}).where(Event.id == id).execute()
 
 def rmClass(id, classname, start):
@@ -156,7 +156,7 @@ def rmClass(id, classname, start):
 		ec["non_recur"] = rmClassText(ec["non_recur"], classname)
 	else:
 		if start in ec["recur"]:
-			ec["recur"][start] = rmClassText(ec["recur"][start, classname])
+			ec["recur"][start] = rmClassText(ec["recur"][start], classname)
 			if ec["recur"][start].strip() == "":
 				del ec["recur"][start]
 	Event.update({Event.eventClass:ec}).where(Event.id == id).execute()
@@ -225,32 +225,6 @@ def eventToDict(event):
 	event_dict['tags'] = tags
 	return event_dict
 
-
-'''
-def getEventByTags(tagids):
-	res = []
-	# print(tagids)
-	if "0" in tagids or 0 in tagids: # All Entries
-		query = Event.select(Event.id, Event.json).execute()
-	else:
-		query = Event.select(Event.id, Event.json).join(EventTag).join(Tag).where(Tag.id.in_(tagids)).execute()
-	for event in query:
-		tags = getTagByEvent(event.id)
-		# print("id = {}".format(event.id))
-		res.append({"id": event.id, "json":event.json
-					,"tagids":[tag["id"] for tag in tags]
-					,"tags": [tag["name"] for tag in tags]})
-	return res
-
-def query(tagids, content):
-	res = []
-	events = getEventByTags(tagids)
-	for event in events:
-		if hasContent(event["json"], content):
-			res.append(event)
-	# print(res)
-	return res
-'''
 
 if __name__ == "__main__":
 	
