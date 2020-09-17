@@ -5,7 +5,11 @@ var updateTagUrl = "/updateTag";
 var newTagUrl = "/newTag";
 var addEventClassUrl = "/addClass";
 var rmEventClassUrl = "/rmClass";
+
+//
 var classEventInfo = {};
+var pre_menuData;
+var menuData;
 var tags;  
 
 function onGetTags(tags){
@@ -23,8 +27,6 @@ function itemCBK(key, opt, e){
         getData(url, (data)=>{console.log("delete Tag!")});
     });
 }
-
-var menuData;
 
 function buildItems(tags){
     var items = {
@@ -130,11 +132,11 @@ $(function(){
         selector: "body",//'.fc-toolbar-chunk', 
         build: function ($trigger, e){
             // check if the menu-items have been saved in the previous call
-            if (conmenuData != null)
+            if (pre_menuData != null)
             {
                 // get options from $trigger
-                var options = conmenuData;//$trigger.data("contextMenuItems");
-                conmenuData = null;
+                var options = pre_menuData;//$trigger.data("contextMenuItems");
+                pre_menuData = null;
                 return options;
             }
             else
@@ -144,7 +146,7 @@ $(function(){
                 getData(getTagsUrl, (data)=>{
                     tags = onGetTags(data["results"]);
                     options.items = buildItems(tags);
-                    conmenuData = options;
+                    pre_menuData = options;
                     $trigger.contextMenu(position);
                 }, dismsg=false);           
                 return false;
