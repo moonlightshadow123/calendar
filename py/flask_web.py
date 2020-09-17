@@ -104,6 +104,32 @@ def updateEvent():
             return jsonify({"res":None, "msg":"Server Update EventTag Error!"})
     return jsonify({"res":data, "msg":"Successfully Update Event!"})
 
+# Event class
+@app.route('/addClass')
+def addClass():
+    id = request.args.get("id")
+    name = request.args.get("class")
+    start = request.args.get("start")
+    try:
+        res = orm.addClass(id, name, start)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Add Class Error!"})
+    return jsonify({"res":"success", "msg":"Successfully Add Class!"})
+
+@app.route('/rmClass')
+def rmClass():
+    id = request.args.get("id")
+    name = request.args.get("class")
+    start = request.args.get("start")
+    try:
+        res = orm.rmClass(id, name, start)
+    except Exception as e:
+        getTraceLog(e)
+        return jsonify({"res":None, "msg":"Server Remove Class Error!"})
+    return jsonify({"res":"success", "msg":"Successfully Remove Class!"})
+
+
 if __name__ == '__main__':
     app.debug = True
     app.run(host='0.0.0.0', port=9300)

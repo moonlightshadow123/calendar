@@ -14,7 +14,7 @@ function onGetTags(tags){
 }
 
 function itemCBK(key, opt, e){
-    console.log("Clicked conmenu key = " + key + ", id = " + opt.items[key]["id"]);
+    //console.log("Clicked conmenu key = " + key + ", id = " + opt.items[key]["id"]);
     var id =  opt.items[key]["id"];
     var name = opt.items[key]["name"];
     dialogPop('Are you sure to delete tag: "' + name + '"?',()=>{
@@ -73,6 +73,50 @@ function buildItems(tags){
 }
 
 var conmenuData;
+var addEventClassUrl = "/addClass";
+var rmEventClassUrl = "/rmClass";
+var classEventInfo = {};
+
+function buildECUrl(url){
+    return url + "?id=" + classEventInfo.id + "&start=" + classEventInfo.start;
+}
+
+function doneCBK(key, opt, e){
+    var url = buildECUrl(addEventClassUrl) + "&class=done";
+    getData(url, (data)=>{refreshAll();}); 
+}
+
+function undoneCBK(key, opt, e){
+    var url = buildECUrl(rmEventClassUrl) + "&class=done";
+    getData(url, (data)=>{refreshAll();}); 
+}
+
+function urgentCBK(key, opt, e){
+    var url = buildECUrl(addEventClassUrl) + "&class=urgent";
+    getData(url, (data)=>{refreshAll();}); 
+}
+
+function unurgentCBK(key, opt, e){
+    var url = buildECUrl(rmEventClassUrl) + "&class=urgent";
+    getData(url, (data)=>{refreshAll();}); 
+}
+
+$(function(){
+    $.contextMenu({
+        selector: ".eventTitle",
+        build: function($trigger,e){
+            classEventInfo["id"] = $trigger.attr("data-id");
+            classEventInfo["start"] = $trigger.attr("data-start");
+            var options = {items:{}};
+            options.items["done"] = {name:"Done", callback:doneCBK};
+            options.items["undone"] = {name:"Un-Done", callback:undoneCBK};
+            options.items["sep"] = "----------";
+            options.items["urgent"] = {name:"Urgent", callback:urgentCBK};
+            options.items["un-urgent"] = {name:"Un-Urgent", callback:unurgentCBK}; 
+            return options;
+        }
+    });
+});
 
 $(function(){
 
@@ -121,13 +165,11 @@ $(function(){
 function getMenuData($this, opt){
     $.contextMenu.getInputValues(opt, $this.data());
     menuData = $this.data();
-    console.log(menuData);
     return menuData;
 }
 
 function refreshAll(){
     var res = [];
-    console.log(tags);
     if(menuData.hasOwnProperty(0)&&menuData[0])
         res.push(0);
     tags.forEach(function(tag){
@@ -135,7 +177,6 @@ function refreshAll(){
         if(menuData.hasOwnProperty(tagid)&&menuData[tagid])
             res.push(tagid);
     });
-    console.log(res);
     postData(getEventsByTagsUrl, res, (data)=>{
         removeEvents();
         displayEvents(data);
@@ -154,7 +195,7 @@ function cha_conf(key, opt, e){
     var item = opt.items["display"]["items"][change_tag];
     var url = updateTagUrl+"?tagid=" + change_tag + "&name=" + change_name;
     dialogPop("Are you sure to change the tag '" +item.name+ "' to '" +change_name +"'?", ()=>{
-        getData(url, (data)=>{console.log(data);refreshAll();} );
+        getData(url, (data)=>{refreshAll();} );
     });
     
 }
@@ -165,7 +206,7 @@ function new_conf(key, opt, e){
     var url = newTagUrl + "?tagname=" + new_tag;
     //getData(url, (data)=>{console.log(data)} );
     dialogPop("Are you sure to create a new tag '" +new_tag+ "'?", ()=>{
-        getData(url, (data)=>{console.log(data);refreshAll();} );
+        getData(url, (data)=>{refreshAll();} );
     });
 }
 
@@ -176,12 +217,12 @@ function deleteTagCBK(key, opt, e){
     var url = deleteTagUrl + "?tagid=" + tagid;
     //getData(url, (data)=>{console.log(data)});
     dialogPop("Are you sure to delete tag '" + key +"'?", ()=>{
-        getData(url, (data)=>{console.log(data);refreshAll();} );
+        getData(url, (data)=>{refreshAll();} );
     });   
 }
 
 function addEventCBK(key, opt, e){
-    console.log(key);
     clearForm();
+    getTags();
     openModal($editModal, "Edit New Event");
 }

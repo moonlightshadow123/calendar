@@ -75,8 +75,8 @@ $(function(){
             dayGridMonth: { // name of view
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
             // other view-specific options here
-        },
-        listDay: { buttonText: 'l-day' },
+            },
+            listDay: { buttonText: 'l-day' },
             listWeek: { buttonText: 'l-week' },
             listMonth: { buttonText: 'l-month' }
         },
@@ -86,10 +86,62 @@ $(function(){
         eventMouseLeave: mouseLeave,
         editable: true,
         eventDrop: eventDrop,
+        eventContent: renderEvent,
     });
     calendar.render();
 });
 
+function renderEvent(arg){
+    argData = arg;
+    var event = arg.event;
+    var view = arg.view;
+    var $div = $('<div class="eventDiv">');
+    var $pre_span = $('<span class="eventPre">');//.html("~Flag~");
+    var $head_span = $('<span class="eventHead">');
+    var $title_span = $('<span class="eventTitle" data-id="'+event.id+'" data-start="'+dateToText(event.start)+'">').html(event.title);
+    if(view.type == "dayGridMonth"){
+        if(!event.allDay){
+            var color = getColor(JSON.stringify(event.extendedProps.tags));
+            $head_span.append($('<span class="dot" style="color:'+color+'">').html("&#9679;&nbsp;"));//.html("&#8226;"));
+            $head_span.append($('<span>').html(event.start.getHours()+":"+event.start.getMinutes() + "&nbsp;"));
+        }
+        $title_span.addClass("cut-text");    
+    }
+    $div.append($pre_span, $head_span, $title_span);
+    detectRenderClass(event, $div);
+    //return {domNodes:[$head_span[0], $foot_span[0], $title_span[0]]};
+    return {domNodes:[$div[0]]};
+}
+
+function detectRenderClass(event, $div){
+    var ec = event.extendedProps.eventClass;
+    var names = "";
+    if(!event.extendedProps.recur)
+        names = ec["non_recur"];
+    else{
+        var start = dateToText(event.start);
+        if(ec["recur"].hasOwnProperty(start)){
+            names = ec["recur"][start];
+        }
+    }
+    var nameList = names.split(" ");
+    nameList.forEach(function(name){
+        if(name == "done")
+            addDone($div);
+        if(name == "urgent")
+            addUrgent($div);
+    });
+}
+
+function addDone($div){
+    $div.find(".eventPre").append($("<span>").css("color", "green").html("&#10004;&nbsp;"));
+}
+
+function addUrgent($div){
+    $div.find(".eventPre").append($("<span>").css("color", "red").html("&#9752;&nbsp;"));
+}
+
+var argData;
 function eventDrop(info){
     $tooltip.fadeOut();
     //alert(info.event.title + " was dropped on " + info.event.start.toISOString());
@@ -113,29 +165,33 @@ function removeEvents(){
 }
 
 function displayEvents(events){
-    console.log(events);
     events.forEach(function(event){
+        event["classNames"] = "event eventObj";
         event["color"] = getColor(JSON.stringify(event["tags"]));
         if(calendar.getEventById(event.id) == null)
             var eventobj = calendar.addEvent(event);
     });
-    
 }
+
+$("body").on("click", ".event", function(){
+    //console.log(".event clicked!");
+});
+
 
 $deleteEventBtn.click(function(){
     var id = $eventId.val();
     dialogPop("Are you sure to delete event with id '" + id.toString() + "'?" , ()=>{
         getData("/deleteEvent?id=" + id, ()=>{refreshAll();});
     });
-
 });
 
- function getColor(text) {
-    console.log(text);
+function getColor(text) {
+    //console.log(text);
     var COLORS = [
-        'green', 'red', 'blue', 'purple',
-        'chocolate', 'pink', 'orange', 'salmon',
-        'olive', 'turquoise', 'wheat', 'lime'
+        'LightCoral','blue', 'purple',
+        'chocolate', 'tan','magenta', 'orange', 'salmon',
+        'olive', 'turquoise', 'wheat', 'limegreen', 'yellowgreen', 'lightseagreen',
+        'peru', 'palevioletred'
     ];
     // Compute hash code
     var hash = 7;
@@ -160,8 +216,6 @@ function onClick(info){
 function getTags(){
     getData(getTagsUrl, (data)=>{
         var tags = onGetTags(data["results"]);
-        console.log("tag!");
-        console.log(tags);
         updateWList(tags);
         tagsToForm();
     }, dismsg=false);
@@ -177,6 +231,7 @@ function clearForm(){
     tagify.removeAllTags();
     $recurContent.css("display", "none");
     $deleteEventDiv.css("display", "none");
+    onCheckChange($recur);
 }
 
 function eventToForm(event, $form){
@@ -197,7 +252,7 @@ function eventToForm(event, $form){
     if(event.allDay){
         $form.find("#allDay").prop("checked", true);
     }
-    if(event._def.recurringDef == null){
+    if(!event.recur){
         $recur.prop("checked", false); setTimeout(function(){onCheckChange($recur[0])}, 1000);
         return;
     }
@@ -269,13 +324,17 @@ function dateToDInput(date, $input){
 function dateToDTInput(date, $input){
     if(date == null || $input[0] == null)
         return;
-    var isoStr = date.getFullYear() +
+    var isoStr = dateToText(date);
+    $input.val(isoStr);
+}
+
+function dateToText(date){
+    return date.getFullYear() +
         '-' + pad(date.getMonth() + 1) +
         '-' + pad(date.getDate()) +
         'T' + pad(date.getHours()) +
         ':' + pad(date.getMinutes()) +
-        ':' + pad(date.getSeconds()) ;;
-    $input.val(isoStr);
+        ':' + pad(date.getSeconds());
 }
 
 function msToTime(s) {
@@ -307,7 +366,7 @@ var data;
 
 function getFormData($form){
     var unindexed_array = $form.serializeArray();
-    var indexed_array = {"daysOfWeek":[], "allDay":false};
+    var indexed_array = {"daysOfWeek":[], "allDay":false,"recur":false};
 
     $.map(unindexed_array, function(n, i){
         if(!indexed_array.hasOwnProperty(n['name']))
@@ -369,7 +428,7 @@ var tooltip_dis = false;
 
 function mouseEnter(info){
     var event = info.event;
-    $tooltip.css("top", info.jsEvent.y+10);
+    $tooltip.css("top", $(window).scrollTop()+info.jsEvent.y+10);
     $tooltip.css("left", info.jsEvent.x+10);
     clearTooltip();
     fillTooltip(event,"title", "tooltip_title");
@@ -391,7 +450,7 @@ function fillTooltip(event, name, eleid){
         value = event[name];
     if(event.extendedProps[name] != null)
         value = event.extendedProps[name];
-    console.log(value);
+    //console.log(value);
     theevent = event;
     if(value!="")
         if(typeof(value)=="object")

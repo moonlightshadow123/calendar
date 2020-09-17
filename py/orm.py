@@ -7,7 +7,6 @@ db = SqliteDatabase('calendar.db')
 db.pragma('foreign_keys', 1, permanent=True)
 # db.connect()
 
-'''
 class JSONField(TextField):
     def db_value(self, value):
         return json.dumps(value)
@@ -15,7 +14,6 @@ class JSONField(TextField):
     def python_value(self, value):
         if value is not None:
             return json.loads(value)
-'''
 
 class BaseModel(Model):
     class Meta:
@@ -40,10 +38,13 @@ class Event(BaseModel):
 	daysOfWeek = CharField(null=True)
 	groupId = CharField(null=True, default="")
 	allDay = BooleanField(default=False)
+	recur = BooleanField(default=False)
+	eventClass = JSONField(default={"non_recur":"", "recur":{}})
 
 class EventTag(BaseModel):
 	event = ForeignKeyField(Event, backref='ets', on_delete='CASCADE')
 	tag = ForeignKeyField(Tag, backref='ets', on_delete='CASCADE')
+
 
 #'''
 # print(b.content[1])
@@ -102,8 +103,19 @@ def deleteEvent(id):
 def updateEvent(id, obj):
 	obj = dowTostr(obj)
 	deleteExtraFields(obj)
+	event_old = model_to_dict(Event.get(Event.id == id))
 	num = Event.update(**obj).where(Event.id == id).execute()
+	event_new = model_to_dict(Event.get(Event.id == id))
+	if event_new["recur"] and detectChange(event_old, event_new, ["startTime", "endTime", "startRecur", "endRecur"]):
+		rmAllClass(id)
 	return num
+
+def detectChange(event_old,event_new, fields):
+	res = False
+	for field in fields:
+		if event_old[field] != event_new[field]:
+			return True
+	return False
 
 def deleteExtraFields(obj):
 	fields = Event._meta.fields.keys()
@@ -112,20 +124,46 @@ def deleteExtraFields(obj):
 			del obj[key]
 	return obj
 
-'''
-def getEvents():
-	res = []
-	query = Event.select()
-	for event in query:
-		cur_dict = model_to_dict(event)
-		dow = cur_dict["daysOfWeek"]
-		if dow !=None:
-			cur_dict["daysOfWeek"] = json.loads(dow)
-			print(json.loads(dow))
-		res.append(cur_dict)
+# Event class
+def addClassText(eventClass, name):
+	if name in eventClass.split(" "):
+		return eventClass
+	return (eventClass + " " + name).strip()
 
-	return res
-'''
+def rmClassText(eventClass, name):
+	if name not in eventClass.split(" "):
+		return eventClass
+	a = eventClass.split(" ")
+	a.remove(name)
+	return " ".join(a)
+
+def addClass(id, classname, start):
+	event = Event.get(Event.id == id)
+	ec = event.eventClass
+	if not event.recur:
+		ec["non_recur"] = addClassText(ec["non_recur"], classname)
+	else:
+		if start not in ec["recur"]:
+			ec["recur"][start] = classname
+		else:
+			ec["recur"][start] = addClassText(ec["recur"][start, classname])
+	Event.update({Event.eventClass:ec}).where(Event.id == id).execute()
+
+def rmClass(id, classname, start):
+	event = Event.get(Event.id == id)
+	ec = event.eventClass
+	if not event.recur:
+		ec["non_recur"] = rmClassText(ec["non_recur"], classname)
+	else:
+		if start in ec["recur"]:
+			ec["recur"][start] = rmClassText(ec["recur"][start, classname])
+			if ec["recur"][start].strip() == "":
+				del ec["recur"][start]
+	Event.update({Event.eventClass:ec}).where(Event.id == id).execute()
+
+def rmAllClass(id):
+	ec = {"non_recur":"", "recur":{}}
+	Event.update({Event.eventClass:ec}).where(Event.id == id).execute()
 
 # EventTag
 def createETs(eventid, tagids):
